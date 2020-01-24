@@ -15,6 +15,8 @@ const isConnected = (maybeElement: any) =>
   !('isConnected' in maybeElement) || maybeElement.isConnected;
 
 const cleanupElements = debounce(async (map: Map<string, any[]>) => {
+  if (typeof map === "undefined") return;
+  
   const keys = Array.from(map.keys());
 
   for (let key of keys) {
@@ -25,9 +27,16 @@ const cleanupElements = debounce(async (map: Map<string, any[]>) => {
 export const stencilSubscription = <T>({ subscribe }: Pick<ObservableMap<T>, 'subscribe'>) => {
   const elmsToUpdate = new Map<string, any[]>();
 
+  if (!window['stencil_state_props']) {
+    window['stencil_state_props'] = [];
+  }
+
+  window['stencil_state_props'].push(elmsToUpdate);
+
   if (typeof getRenderingRef !== 'function') {
     // If we are not in a stencil project, we do nothing.
     // This function is not really exported by @stencil/core.
+    console.log('If we are not in a stencil project, we do nothing.');
     return;
   }
 
@@ -36,6 +45,9 @@ export const stencilSubscription = <T>({ subscribe }: Pick<ObservableMap<T>, 'su
       const elm = getRenderingRef();
       if (elm) {
         appendToMap(elmsToUpdate, propName as string, elm);
+        //console.log('== ELM FOUND', { elm: elm, prop: propName });
+      } else {
+        //console.warn('==++ ELM not found', { elm: elm, prop: propName });
       }
     },
     reset() {
